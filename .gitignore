@@ -48,3 +48,9 @@ htmlcov/
 .dmypy.json
 dmypy.json
 .pyre/
+
+# E2B Project files
+examples/demo/e2b_project/.env
+examples/demo/e2b_project/.template_id
+demo/e2b-sandbox-claude-agent-sdk/.env
+demo/e2b-sandbox-claude-agent-sdk/.template_id

@@ -9,6 +9,7 @@ pip install claude-agent-sdk
 ```
 
 **Prerequisites:**
+
 - Python 3.10+
 - Node.js
 - Claude Code 2.0.0+: `npm install -g @anthropic-ai/claude-code`
@@ -229,10 +230,10 @@ async with ClaudeSDKClient(options=options) as client:
         print(msg)
 ```
 
-
 ## Types
 
 See [src/claude_agent_sdk/types.py](src/claude_agent_sdk/types.py) for complete type definitions:
+
 - `ClaudeAgentOptions` - Configuration options
 - `AssistantMessage`, `UserMessage`, `SystemMessage`, `ResultMessage` - Message types
 - `TextBlock`, `ToolUseBlock`, `ToolResultBlock` - Content blocks
@@ -265,11 +266,42 @@ See [src/claude_agent_sdk/_errors.py](src/claude_agent_sdk/_errors.py) for all e
 
 See the [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code/settings#tools-available-to-claude) for a complete list of available tools.
 
+## Using with E2B Sandbox
+
+For a secure, isolated environment with Claude Agent SDK pre-installed, you can use our E2B sandbox template:
+
+```python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with Claude Agent SDK pre-installed
+sandbox = Sandbox(template="172m9tbyjat0ss16v9e8")
+
+# Run Claude Agent SDK code in the sandbox
+result = sandbox.commands.run("""
+python3 -c "from claude_agent_sdk import query; import asyncio; asyncio.run(query('What is 2 + 2?'))"
+""")
+
+print(result.stdout)
+sandbox.close()
+```
+
+The E2B sandbox includes:
+
+- ✅ Python 3.12
+- ✅ Node.js 20.x
+- ✅ Claude Code CLI
+- ✅ Claude Agent SDK
+- ✅ Pre-configured environment variables
+
+See [E2B_SETUP.md](E2B_SETUP.md) for complete setup instructions and [examples/e2b_claude_agent_sdk.py](examples/e2b_claude_agent_sdk.py) for a full example.
+
 ## Examples
 
 See [examples/quick_start.py](examples/quick_start.py) for a complete working example.
 
 See [examples/streaming_mode.py](examples/streaming_mode.py) for comprehensive examples involving `ClaudeSDKClient`. You can even run interactive examples in IPython from [examples/streaming_mode_ipython.py](examples/streaming_mode_ipython.py).
+
+See [examples/e2b_claude_agent_sdk.py](examples/e2b_claude_agent_sdk.py) for using Claude Agent SDK in an E2B sandbox environment.
 
 ## Migrating from Claude Code SDK
 
