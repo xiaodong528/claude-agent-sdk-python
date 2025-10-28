@@ -12,16 +12,16 @@ template = (
     # 基础镜像（使用默认）
     .from_base_image()
 
+    # 使用 sudo 安装全局 npm 包
+    .run_cmd("sudo npm install -g @anthropic-ai/claude-code")
+
     # 设置用户
     .set_user("user")
 
     # 工作目录
     .set_workdir("/home/user/workspace")
 
-    # 安装 Claude Code CLI
-    .run_cmd("npm install -g @anthropic-ai/claude-code")
-
-    # 安装 Claude Agent SDK
+    # 安装 Claude Agent SDK（以 user 用户身份）
     .run_cmd("pip install claude-agent-sdk")
     .run_cmd("pip install anthropic")
 
@@ -40,11 +40,7 @@ template = (
         """
         echo "=== Environment Version Check ===" && \
         python --version && \
-        pip --version && \
-        node --version && \
-        npm --version && \
-        claude --version && \
-        python -c "import claude_agent_sdk; print(f'Claude Agent SDK: {claude_agent_sdk.__version__}')"
+        node --version
         """,
         wait_for_timeout(5_000)
     )
