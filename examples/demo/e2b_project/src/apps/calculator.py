@@ -19,7 +19,7 @@ from pathlib import Path
 # 添加 src 目录到 Python 路径，以便导入 agent_runner
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agent_runner import run_code_in_sandbox
+from agent_runner import run_code_with_service
 
 
 async def main():
@@ -45,12 +45,14 @@ async def main():
     print("✅ 环境变量检查通过\n")
 
     try:
-        # 调用 agent_runner 执行 code/calculator.py
-        result = await run_code_in_sandbox(
+        # 调用 agent_runner 执行 code/calculator.py 并启动 Web 服务
+        result = await run_code_with_service(
             code_file="calculator.py",
+            service_port=3000,  # 前端服务端口
             env_vars={
                 "ANTHROPIC_AUTH_TOKEN": anthropic_token
-            }
+            },
+            wait_time=5  # 等待 5 秒让服务完全启动
         )
 
         # 显示结果
@@ -71,7 +73,22 @@ async def main():
         else:
             print("\n⚠️  未发现生成的文件")
 
-        print("=" * 60)
+        # 显示服务 URL
+        if result.get('service_url'):
+            print("\n" + "=" * 60)
+            print("🌐 Web 服务信息")
+            print("=" * 60)
+            print(f"✅ 前端地址: {result['service_url']}")
+            print(f"✅ Sandbox ID: {result['sandbox_id']}")
+            print("\n💡 使用提示:")
+            print("  1. 在浏览器中打开上述地址访问计算器应用")
+            print("  2. Sandbox 将保持运行约 1 小时（3600 秒）")
+            print("  3. 服务超时后会自动关闭")
+            print("=" * 60)
+        else:
+            print("\n⚠️  未获取到服务 URL")
+
+        print()
 
     except FileNotFoundError as e:
         print(f"\n❌ 文件错误: {e}")

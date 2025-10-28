@@ -227,17 +227,28 @@ if __name__ == "__main__":
 
 ## 3. Agent 运行器实现
 
-### 3.1 完整的 Agent 运行器
+### 3.1 实际项目中的 Agent 运行器
+
+实际项目中的 `agent_runner.py` 提供两个核心函数，分别用于不同场景：
+
+**核心函数：**
+
+1. **`run_code_in_sandbox(code_file, env_vars)`** - 自动清理模式
+   - 执行完成后自动关闭 Sandbox
+   - 适用于一次性任务
+   - 返回退出码和生成文件列表
+
+2. **`run_code_with_service(code_file, service_port, env_vars, wait_time)`** - 服务模式
+   - 执行后保持 Sandbox 运行
+   - 获取服务外部访问 URL
+   - 适用于 Web 服务
 
 ```python
 """
-agent_runner.py - Claude Agent SDK 运行器
+agent_runner.py - 在 E2B Sandbox 中运行 code/*.py 脚本
 
-提供完整的 Agent 任务管理功能:
-- 任务提交和执行
-- 实时输出捕获
-- 结果收集
-- 错误处理
+该模块提供核心功能，用于在 E2B Sandbox 中执行 AI 代码生成脚本。
+保持 Sandbox 环境清洁，只包含 AI 生成的代码文件。
 """
 
 import asyncio

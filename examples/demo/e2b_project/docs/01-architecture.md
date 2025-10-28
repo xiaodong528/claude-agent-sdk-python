@@ -6,44 +6,71 @@
 
 ## 1. 整体架构
 
-### 1.1 架构图
+### 1.1 项目结构
+
+```
+e2b_project/
+├── src/
+│   ├── template.py              # E2B Template 定义
+│   ├── build_template.py        # Template 构建脚本
+│   ├── sandbox_manager.py       # Sandbox 生命周期管理
+│   ├── agent_runner.py          # Agent 运行器（核心）
+│   ├── code/                    # AI Agent 脚本（在 Sandbox 内执行）
+│   │   ├── calculator.py        # 计算器应用生成器
+│   │   └── memo.py              # 备忘录应用生成器
+│   └── apps/                    # 应用运行器（在宿主机执行）
+│       ├── __init__.py
+│       └── calculator.py        # 计算器应用运行器
+├── docs/                        # 项目文档
+├── tests/                       # 测试文件
+├── .env                         # 环境变量配置
+├── .template_id                 # Template ID（构建后生成）
+└── e2b_claude_agent_sdk.ipynb  # Jupyter 示例
+```
+
+### 1.2 架构图
 
 ```mermaid
 graph TB
-    subgraph "开发环境"
+    subgraph "1. 开发环境 - Template 构建"
         A[template.py<br/>Template定义] --> B[build_template.py<br/>构建脚本]
         B --> C[E2B Cloud API]
+        C --> D[Template Registry]
+        D --> E[.template_id<br/>保存 Template ID]
     end
 
-    subgraph "E2B Cloud"
-        C --> D[Template Builder]
-        D --> E[Template Registry]
-        E --> F[Template ID]
+    subgraph "2. 应用层 - 宿主机执行"
+        F[apps/calculator.py<br/>应用运行器] --> G[agent_runner.py<br/>Agent运行器]
+        G --> H[sandbox_manager.py<br/>Sandbox管理]
     end
 
-    subgraph "运行时环境"
-        G[sandbox_manager.py<br/>Sandbox管理器] --> H[E2B Sandbox Instance]
-        F -.模板ID.-> G
-        I[agent_runner.py<br/>Agent运行器] --> H
+    subgraph "3. E2B Sandbox 实例"
+        H --> I[Sandbox Instance]
+        I --> J[code/calculator.py<br/>AI Agent 脚本]
+        J --> K[Claude Agent SDK]
+        K --> L[Claude API]
+        K --> M[工具调用<br/>Bash/Read/Write]
+        M --> N[生成文件<br/>index.html等]
     end
 
-    subgraph "E2B Sandbox 内部"
-        H --> J[Ubuntu Base Image]
-        J --> K[Claude Code CLI]
-        J --> L[Claude Agent SDK]
-        J --> M[Python Runtime]
-        L --> N[执行用户任务]
+    subgraph "4. Web 服务"
+        N --> O[HTTP Server<br/>端口 3000]
+        O --> P[外部 URL<br/>https://xxx.e2b.dev]
     end
+
+    E -.读取 Template ID.-> G
+    L -.AI 响应.-> K
+    P -.返回给用户.-> F
 
     style A fill:#e1f5ff
-    style B fill:#e1f5ff
-    style G fill:#fff4e1
-    style I fill:#fff4e1
-    style H fill:#e8f5e9
-    style L fill:#f3e5f5
+    style F fill:#fff4e1
+    style G fill:#ffecb3
+    style I fill:#e8f5e9
+    style K fill:#f3e5f5
+    style P fill:#fce4ec
 ```
 
-### 1.2 技术栈
+### 1.3 技术栈
 
 | 层级 | 技术组件 | 作用 |
 |-----|---------|-----|
@@ -183,40 +210,64 @@ class SandboxManager:
 
 **核心文件**: `agent_runner.py`
 
-**运行模式**: 长期运行服务
+**运行模式**: 支持两种模式
+
+1. **自动清理模式** - `run_code_in_sandbox()`: 执行完自动关闭Sandbox
+2. **服务模式** - `run_code_with_service()`: 保持Sandbox运行,获取服务URL
 
 ```python
-async def run_agent_service(sandbox):
-    """在 Sandbox 内运行 Agent 服务"""
+async def run_code_in_sandbox(code_file: str, env_vars: Optional[dict] = None) -> dict:
+    """在 E2B Sandbox 中运行 code/*.py 脚本（自动清理）"""
 
-    # 写入 Agent 任务脚本
-    agent_script = """
-import asyncio
-from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
+    # 1. 读取 Template ID
+    template_id = _read_template_id()
 
+    # 2. 读取代码文件
+    code_content = Path(f"code/{code_file}").read_text()
+
+    # 3. 创建 Sandbox 并执行
+    async with SandboxManager(template_id, env_vars) as manager:
+        # 上传代码文件
+        await manager.sandbox.files.write(f"/home/user/workspace/{code_file}", code_content)
+
+        # 执行代码
+        result = await manager.sandbox.commands.run(f"python /home/user/workspace/{code_file}")
+
+        # 列出生成的文件
+        files = await manager.sandbox.files.list("/home/user/workspace")
+
+    return {"exit_code": result.exit_code, "files": [f.name for f in files]}
+
+
+async def run_code_with_service(code_file: str, service_port: int, ...) -> dict:
+    """在 E2B Sandbox 中运行代码并获取服务 URL（保持运行）"""
+
+    # 创建 Sandbox（不使用 Context Manager）
+    manager = SandboxManager(template_id, env_vars)
+    await manager.start()
+
+    # 执行代码
+    result = await manager.sandbox.commands.run(...)
+
+    # 获取服务 URL
+    service_url = f"https://{manager.sandbox.get_host(port=service_port)}"
+
+    # 不关闭 Sandbox，保持服务运行
+    return {"exit_code": result.exit_code, "service_url": service_url, "sandbox_id": manager.sandbox.sandbox_id}
+```
+
+**应用运行器层**: `apps/calculator.py`
+
+```python
 async def main():
-    options = ClaudeAgentOptions(
-        allowed_tools=["Bash", "Read", "Write"],
-        permission_mode="bypassPermissions"
+    """运行计算器应用生成器"""
+    # 调用 agent_runner 执行 code/calculator.py
+    result = await run_code_with_service(
+        code_file="calculator.py",
+        service_port=3000
     )
 
-    async with ClaudeSDKClient(options) as client:
-        await client.query("Create a Python web app")
-
-        async for message in client.receive_response():
-            print(message)
-
-asyncio.run(main())
-"""
-
-    # 启动长期运行进程
-    process = await sandbox.start_process(
-        cmd="python /home/user/workspace/agent_task.py",
-        on_stdout=handle_output,
-        on_stderr=handle_error
-    )
-
-    await process.wait()
+    print(f"✅ 服务 URL: {result['service_url']}")
 ```
 
 ## 3. 数据流程

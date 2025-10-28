@@ -18,6 +18,10 @@ async def main():
     # 配置 Agent 选项
     options = ClaudeAgentOptions(
         allowed_tools=["Bash", "Read", "Write", "Glob"],
+        system_prompt={
+            "type": "preset",
+            "preset": "claude_code"
+        },
         permission_mode="bypassPermissions",  # Sandbox 中跳过权限确认
         cwd="/home/user/workspace"
     )
@@ -26,22 +30,32 @@ async def main():
     async with ClaudeSDKClient(options) as client:
         # 发送任务查询
         await client.query("""
-创建一个简单的 Python 计算器应用:
+创建一个带 Web 前端的计算器应用:
 
-1. 创建 calculator.py 文件，包含以下函数:
-   - add(a, b): 加法
-   - subtract(a, b): 减法
-   - multiply(a, b): 乘法
-   - divide(a, b): 除法（处理除零错误）
+1. 创建 index.html 文件:
+   - 美观的计算器界面（使用原生 HTML + CSS + JavaScript）
+   - 实现加减乘除运算功能
+   - 支持键盘输入（数字键和运算符）
+   - 显示计算历史记录
+   - 响应式设计，适配不同屏幕
+   - 使用现代化的 CSS 样式（渐变、阴影、圆角）
 
-2. 每个函数都要添加完整的 docstrings，说明参数、返回值和可能的异常
+2. 启动 Web 服务:
+   - 使用 Python 的 http.server 模块在 3000 端口启动服务
+   - 确保服务在后台持续运行（使用 nohup 或 & 后台运行）
+   - 服务启动后打印确认消息
 
-3. 创建 README.md 文件，包含:
-   - 应用简介
-   - 函数使用示例
-   - 注意事项
+3. 创建 README.md 文件:
+   - 应用说明
+   - 功能列表
+   - 访问方式（本地和远程）
+   - 使用截图或功能演示
 
-请确保代码简洁、清晰，符合 Python 最佳实践。
+要求:
+- 界面美观、现代化
+- 代码简洁、注释清晰
+- 完成后立即启动服务并保持运行
+- 使用中文回复所有消息
         """)
 
         # 接收并处理响应
