@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aipexbase-mcp-server": {
+      "type": "sse",
+      "url": "http://127.0.0.1:8081/mcp/sse?token=kf_api_oCCzkgTXBdzJk3HRbUdkrXpYfnfawCPR"
+    }
+  }
+}

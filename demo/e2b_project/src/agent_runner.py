@@ -116,7 +116,7 @@ async def run_code_in_sandbox(
 
     async with SandboxManager(template_id, default_env_vars) as manager:
         # 5. 写入代码文件到 Sandbox
-        target_path = f"/home/user/workspace/{code_file}"
+        target_path = f"/home/user/{code_file}"
         print(f"📤 上传代码到 Sandbox: {target_path}")
         await manager.sandbox.files.write(target_path, code_content)
         print("✅ 代码文件已上传")
@@ -143,7 +143,7 @@ async def run_code_in_sandbox(
         # 8. 列出生成的文件
         print("\n📂 检查生成的文件...")
         try:
-            files = await manager.sandbox.files.list("/home/user/workspace")
+            files = await manager.sandbox.files.list("/home/user")
             generated_files = [
                 f.name for f in files
                 if not f.name.startswith('.') and f.name != code_file
@@ -236,10 +236,28 @@ async def run_code_with_service(
         result["sandbox_id"] = manager.sandbox.sandbox_id
 
         # 5. 写入代码文件到 Sandbox
-        target_path = f"/home/user/workspace/{code_file}"
+        target_path = f"/home/user/{code_file}"
         print(f"📤 上传代码到 Sandbox: {target_path}")
         await manager.sandbox.files.write(target_path, code_content)
         print("✅ 代码文件已上传")
+
+        # 5.5. 在 Sandbox 中添加 MCP 服务器配置
+        print("\n🔧 配置 MCP 服务器...")
+        mcp_cmd = (
+            'claude mcp add --transport sse --scope user aipexbase-mcp-server "http://127.0.0.1:8081/mcp/sse?token=kf_api_oCCzkgTXBdzJk3HRbUdkrXpYfnfawCPR"; claude mcp list'
+        )
+
+        mcp_result = await manager.sandbox.commands.run(
+            cmd=mcp_cmd,
+            on_stdout=lambda msg: print(f"[MCP] {msg}"),
+            on_stderr=lambda msg: print(f"[MCP Error] {msg}"),
+            timeout=30
+        )
+
+        if mcp_result.exit_code == 0:
+            print("✅ MCP 服务器配置成功")
+        else:
+            print(f"⚠️  MCP 配置失败 (退出码: {mcp_result.exit_code})")
 
         # 6. 执行代码
         print(f"\n🚀 执行代码: python {target_path}\n")
@@ -276,7 +294,7 @@ async def run_code_with_service(
         # 9. 列出生成的文件
         print("\n📂 检查生成的文件...")
         try:
-            files = await manager.sandbox.files.list("/home/user/workspace")
+            files = await manager.sandbox.files.list("/home/user")
             generated_files = [
                 f.name for f in files
                 if not f.name.startswith('.') and f.name != code_file

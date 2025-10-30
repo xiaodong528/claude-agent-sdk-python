@@ -19,7 +19,7 @@ template = (
     .set_user("user")
 
     # 工作目录
-    .set_workdir("/home/user/workspace")
+    .set_workdir("/home/user")
 
     # 安装 Claude Agent SDK（以 user 用户身份）
     .run_cmd("pip install claude-agent-sdk")
@@ -32,7 +32,7 @@ template = (
         "ANTHROPIC_DEFAULT_OPUS_MODEL": os.getenv("ANTHROPIC_DEFAULT_OPUS_MODEL", "GLM-4.6"),
         "ANTHROPIC_DEFAULT_SONNET_MODEL": os.getenv("ANTHROPIC_DEFAULT_SONNET_MODEL", "GLM-4.6"),
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": os.getenv("ANTHROPIC_DEFAULT_HAIKU_MODEL", "GLM-4.5-Air"),
-        "WORKSPACE_DIR": "/home/user/workspace"
+        "WORKSPACE_DIR": "/home/user"
     })
 
     # 启动命令：检查工具版本
