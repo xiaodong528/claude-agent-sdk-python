@@ -23,7 +23,8 @@ async def main():
             "preset": "claude_code"
         },
         permission_mode="bypassPermissions",  # Sandbox 中跳过权限确认
-        cwd="/home/user/workspace"
+        cwd="/home/user/workspace" ,
+        mcp_servers=""
     )
 
     # 创建 Agent 客户端并执行任务

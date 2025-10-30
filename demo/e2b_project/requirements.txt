@@ -1,0 +1,20 @@
+# E2B Project Runtime Dependencies
+
+# E2B Sandbox SDK - 用于创建和管理隔离的代码执行环境
+e2b>=2.4.0
+
+# Claude Agent SDK - 用于与 Claude AI 进行交互
+claude-agent-sdk>=0.1.5
+
+# Python-dotenv - 用于加载环境变量
+python-dotenv>=1.2.0
+
+# HTTP 请求库
+requests==2.31.0
+
+# 彩色终端输出
+colorama==0.4.6
+
+# 测试框架
+pytest==7.4.3
+pytest-timeout==2.2.0
